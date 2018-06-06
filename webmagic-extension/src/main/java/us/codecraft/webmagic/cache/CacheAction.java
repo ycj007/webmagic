@@ -7,7 +7,7 @@ import java.util.function.Function;
  * 缓存操作接口
  * @param <T>
  */
-public interface Cache<T> {
+public interface CacheAction<T> {
 
     /**
      * 执行消费动作

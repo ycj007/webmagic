@@ -7,7 +7,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Task;
-import us.codecraft.webmagic.cache.JedisManager;
+import us.codecraft.webmagic.utils.JedisManagerUtils;
 import us.codecraft.webmagic.scheduler.component.DuplicateRemover;
 
 /**
@@ -19,7 +19,7 @@ import us.codecraft.webmagic.scheduler.component.DuplicateRemover;
 public class RedisScheduler extends DuplicateRemovedScheduler implements MonitorableScheduler, DuplicateRemover {
 
 
-    protected JedisManager defaultCache;
+    protected JedisManagerUtils defaultCache;
 
     private static final String QUEUE_PREFIX = "queue_";
 
@@ -32,7 +32,7 @@ public class RedisScheduler extends DuplicateRemovedScheduler implements Monitor
     }
 
     public RedisScheduler(JedisPool pool) {
-        this.defaultCache = new JedisManager(pool);
+        this.defaultCache = new JedisManagerUtils(pool);
         setDuplicateRemover(this);
     }
 

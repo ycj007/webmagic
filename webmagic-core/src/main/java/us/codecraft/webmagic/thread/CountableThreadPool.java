@@ -67,21 +67,20 @@ public class CountableThreadPool {
             }
         }
         threadAlive.incrementAndGet();
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
+        executorService.execute(() -> {
+
+            try {
+                runnable.run();
+            } finally {
                 try {
-                    runnable.run();
+                    reentrantLock.lock();
+                    threadAlive.decrementAndGet();
+                    condition.signal();
                 } finally {
-                    try {
-                        reentrantLock.lock();
-                        threadAlive.decrementAndGet();
-                        condition.signal();
-                    } finally {
-                        reentrantLock.unlock();
-                    }
+                    reentrantLock.unlock();
                 }
             }
+
         });
     }
 

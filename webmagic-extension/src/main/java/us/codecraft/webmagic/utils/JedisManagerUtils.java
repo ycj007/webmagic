@@ -1,17 +1,18 @@
-package us.codecraft.webmagic.cache;
+package us.codecraft.webmagic.utils;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import us.codecraft.webmagic.cache.CacheAction;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class JedisManager implements Cache<Jedis> {
+public class JedisManagerUtils implements CacheAction<Jedis> {
 
 
     protected JedisPool pool;
 
-    public JedisManager(JedisPool pool) {
+    public JedisManagerUtils(JedisPool pool) {
 
         this.pool = pool;
     }
