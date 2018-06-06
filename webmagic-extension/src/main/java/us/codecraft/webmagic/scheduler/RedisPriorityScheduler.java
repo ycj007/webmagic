@@ -39,9 +39,7 @@ public class RedisPriorityScheduler extends RedisScheduler
     @Override
     protected void pushWhenNoDuplicate(Request request, Task task)
     {
-        Jedis jedis = pool.getResource();
-        try
-        {
+        defaultCache.executeConsumer(jedis -> {
             if(request.getPriority() > 0)
                 jedis.zadd(getZsetPlusPriorityKey(task), request.getPriority(), request.getUrl());
             else if(request.getPriority() < 0)
@@ -50,67 +48,60 @@ public class RedisPriorityScheduler extends RedisScheduler
                 jedis.lpush(getQueueNoPriorityKey(task), request.getUrl());
 
             setExtrasInItem(jedis, request, task);
-        }
-        finally
-        {
-            pool.returnResource(jedis);
-        }
+        });
+
     }
 
     @Override
     public synchronized Request poll(Task task)
     {
-        Jedis jedis = pool.getResource();
-        try
-        {
+
+        return defaultCache.executeFunction(jedis -> {
             String url = getRequest(jedis, task);
             if(StringUtils.isBlank(url))
                 return null;
             return getExtrasInItem(jedis, url, task);
-        }
-        finally
-        {
-            pool.returnResource(jedis);
-        }
+        });
+
     }
 
     private String getRequest(Jedis jedis, Task task)
     {
-        String url;
-        Set<String> urls = jedis.zrevrange(getZsetPlusPriorityKey(task), 0, 0);
-        if(urls.isEmpty())
-        {
-            url = jedis.lpop(getQueueNoPriorityKey(task));
-            if(StringUtils.isBlank(url))
-            {
-                urls = jedis.zrevrange(getZsetMinusPriorityKey(task), 0, 0);
-                if(!urls.isEmpty())
-                {
-                    url = urls.toArray(new String[0])[0];
-                    jedis.zrem(getZsetMinusPriorityKey(task), url);
-                }
-            }
-        }
-        else
-        {
-            url = urls.toArray(new String[0])[0];
-            jedis.zrem(getZsetPlusPriorityKey(task), url);
-        }
-        return url;
+       return  defaultCache.executeFunction(jedis1 -> {
+           String url;
+           Set<String> urls = jedis.zrevrange(getZsetPlusPriorityKey(task), 0, 0);
+           if(urls.isEmpty())
+           {
+               url = jedis.lpop(getQueueNoPriorityKey(task));
+               if(StringUtils.isBlank(url))
+               {
+                   urls = jedis.zrevrange(getZsetMinusPriorityKey(task), 0, 0);
+                   if(!urls.isEmpty())
+                   {
+                       url = urls.toArray(new String[0])[0];
+                       jedis.zrem(getZsetMinusPriorityKey(task), url);
+                   }
+               }
+           }
+           else
+           {
+               url = urls.toArray(new String[0])[0];
+               jedis.zrem(getZsetPlusPriorityKey(task), url);
+           }
+           return url;
+        });
+
+
     }
 
     @Override
     public void resetDuplicateCheck(Task task)
     {
-        Jedis jedis = pool.getResource();
-        try
-        {
+
+        defaultCache.executeConsumer(jedis -> {
             jedis.del(getSetKey(task));
-        }
-        finally
-        {
-            pool.returnResource(jedis);
-        }
+        });
+
     }
 
     private String getZsetPlusPriorityKey(Task task)
